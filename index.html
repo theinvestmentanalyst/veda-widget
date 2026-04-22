@@ -16,26 +16,6 @@
       min-height: 100vh;
       padding: 20px;
     }
-    #start-veda {
-      padding: 14px 32px;
-      background: #0a3d62;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(10,61,98,0.25);
-      transition: all 0.15s ease;
-    }
-    #start-veda:hover { transform: translateY(-2px); }
-    #start-veda:disabled { opacity: 0.6; cursor: not-allowed; }
-    #veda-status {
-      margin-top: 16px;
-      font-size: 14px;
-      color: #555;
-      min-height: 20px;
-    }
     #veda-cta-container {
       margin-top: 20px;
       transition: opacity 0.4s ease, transform 0.4s ease;
@@ -66,8 +46,11 @@
   </style>
 </head>
 <body>
-  <button id="start-veda">🎙️ Talk to Veda</button>
-  <div id="veda-status"></div>
+
+  <elevenlabs-convai
+    id="veda-widget"
+    agent-id="agent_3701kprrr0kter8ry42f7amz7apr">
+  </elevenlabs-convai>
 
   <div id="veda-cta-container" class="veda-cta-hidden">
     <a href="https://theinvestmentanalyst.com/trial?utm_source=voice_demo&utm_medium=veda"
@@ -77,11 +60,7 @@
     </a>
   </div>
 
-  <script type="module">
-    import { Conversation } from "https://cdn.jsdelivr.net/npm/@elevenlabs/client@latest/+esm";
-
-    const AGENT_ID = "agent_3701kprrr0kter8ry42f7amz7apr";
-
+  <script>
     function getParam(name) {
       return new URLSearchParams(window.location.search).get(name) || "";
     }
@@ -115,55 +94,42 @@
       };
     }
 
-    const startBtn = document.getElementById("start-veda");
-    const statusEl = document.getElementById("veda-status");
     const ctaContainer = document.getElementById("veda-cta-container");
     const ctaBtn = document.getElementById("veda-trial-btn");
-    let conversation = null;
 
-    startBtn.addEventListener("click", async () => {
-      if (conversation) return;
-      startBtn.disabled = true;
-      statusEl.textContent = "Connecting…";
-
-      try {
-        const context = buildContext();
-        console.log("Veda context:", context);
-
-        conversation = await Conversation.startSession({
-          agentId: AGENT_ID,
-          dynamicVariables: context,
-          clientTools: {
-            show_trial_cta: ({ variant }) => {
-              if (variant === "ai_build") {
-                ctaBtn.href = "https://theinvestmentanalyst.com/contact";
-                ctaBtn.querySelector(".veda-cta-label").textContent = "Talk to the team";
-                ctaBtn.querySelector(".veda-cta-sub").textContent = "Get a voice agent built for you";
-              }
-              ctaContainer.classList.remove("veda-cta-hidden");
-              ctaContainer.classList.add("veda-cta-visible");
-              return "Button shown";
-            },
-          },
-          onConnect: () => { statusEl.textContent = "Connected — speak now"; },
-          onDisconnect: () => {
-            statusEl.textContent = "Call ended";
-            startBtn.disabled = false;
-            conversation = null;
-            markReturning();
-          },
-          onError: (err) => {
-            statusEl.textContent = "Error — please refresh";
-            console.error(err);
-            startBtn.disabled = false;
-          },
-        });
-      } catch (e) {
-        statusEl.textContent = "Could not start — check mic permission";
-        console.error(e);
-        startBtn.disabled = false;
+    function showCta(variant) {
+      if (variant === "ai_build") {
+        ctaBtn.href = "https://theinvestmentanalyst.com/contact";
+        ctaBtn.querySelector(".veda-cta-label").textContent = "Talk to the team";
+        ctaBtn.querySelector(".veda-cta-sub").textContent = "Get a voice agent built for you";
       }
+      ctaContainer.classList.remove("veda-cta-hidden");
+      ctaContainer.classList.add("veda-cta-visible");
+      return "Button shown";
+    }
+
+    const widget = document.getElementById("veda-widget");
+
+    widget.addEventListener("elevenlabs-convai:call", (event) => {
+      const context = buildContext();
+      console.log("Veda context:", context);
+
+      event.detail.config.dynamicVariables = context;
+
+      event.detail.config.clientTools = {
+        show_trial_cta: ({ variant }) => showCta(variant),
+      };
+    });
+
+    widget.addEventListener("elevenlabs-convai:call-ended", () => {
+      markReturning();
     });
   </script>
+
+  <script
+    src="https://unpkg.com/@elevenlabs/convai-widget-embed"
+    async
+    type="text/javascript"></script>
+
 </body>
 </html>
