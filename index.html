@@ -16,33 +16,6 @@
       min-height: 100vh;
       padding: 20px;
     }
-    #veda-cta-container {
-      margin-top: 20px;
-      transition: opacity 0.4s ease, transform 0.4s ease;
-    }
-    .veda-cta-hidden {
-      opacity: 0;
-      transform: translateY(12px);
-      pointer-events: none;
-    }
-    .veda-cta-visible {
-      opacity: 1;
-      transform: translateY(0);
-      pointer-events: auto;
-    }
-    .veda-cta-btn {
-      display: inline-flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 14px 28px;
-      background: linear-gradient(135deg, #0a3d62 0%, #1e6091 100%);
-      color: #fff;
-      text-decoration: none;
-      border-radius: 10px;
-      box-shadow: 0 6px 20px rgba(10,61,98,0.3);
-    }
-    .veda-cta-label { font-size: 17px; font-weight: 600; }
-    .veda-cta-sub { font-size: 13px; opacity: 0.9; margin-top: 2px; }
   </style>
 </head>
 <body>
@@ -51,14 +24,6 @@
     id="veda-widget"
     agent-id="agent_3701kprrr0kter8ry42f7amz7apr">
   </elevenlabs-convai>
-
-  <div id="veda-cta-container" class="veda-cta-hidden">
-    <a href="https://www.theinvestmentanalyst.com/payment?product_id=premium-pro&type=learning_program&utm_source=voice_demo&utm_medium=veda"
-   id="veda-trial-btn" class="veda-cta-btn" target="_top" rel="noopener">
-      <span class="veda-cta-label">Start Your 30-Day Free Trial</span>
-      <span class="veda-cta-sub">No credit card · Nothing to lose</span>
-    </a>
-  </div>
 
   <script>
     function getParam(name) {
@@ -95,33 +60,10 @@
     }
 
     const widget = document.getElementById("veda-widget");
-    const ctaContainer = document.getElementById("veda-cta-container");
-    const ctaBtn = document.getElementById("veda-trial-btn");
 
-    function showCta(variant) {
-      if (variant === "ai_build") {
-        ctaBtn.href = "https://www.theinvestmentanalyst.com/contact?utm_source=voice_demo&utm_medium=veda&utm_campaign=build_ai";
-        ctaBtn.querySelector(".veda-cta-label").textContent = "Talk to the team";
-        ctaBtn.querySelector(".veda-cta-sub").textContent = "Get a voice agent built for you";
-      }
-      ctaContainer.classList.remove("veda-cta-hidden");
-      ctaContainer.classList.add("veda-cta-visible");
-      return "Button shown";
-    }
-
-    // Set dynamic variables as an attribute BEFORE the widget script loads
     const context = buildContext();
     console.log("Veda context:", context);
     widget.setAttribute("dynamic-variables", JSON.stringify(context));
-
-    // Register client tool handler
-    widget.addEventListener("elevenlabs-convai:call", (event) => {
-      if (event.detail && event.detail.config) {
-        event.detail.config.clientTools = {
-          show_trial_cta: ({ variant }) => showCta(variant),
-        };
-      }
-    });
 
     widget.addEventListener("elevenlabs-convai:call-ended", () => {
       markReturning();
