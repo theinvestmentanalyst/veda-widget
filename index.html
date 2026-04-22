@@ -94,6 +94,7 @@
       };
     }
 
+    const widget = document.getElementById("veda-widget");
     const ctaContainer = document.getElementById("veda-cta-container");
     const ctaBtn = document.getElementById("veda-trial-btn");
 
@@ -108,17 +109,18 @@
       return "Button shown";
     }
 
-    const widget = document.getElementById("veda-widget");
+    // Set dynamic variables as an attribute BEFORE the widget script loads
+    const context = buildContext();
+    console.log("Veda context:", context);
+    widget.setAttribute("dynamic-variables", JSON.stringify(context));
 
+    // Register client tool handler
     widget.addEventListener("elevenlabs-convai:call", (event) => {
-      const context = buildContext();
-      console.log("Veda context:", context);
-
-      event.detail.config.dynamicVariables = context;
-
-      event.detail.config.clientTools = {
-        show_trial_cta: ({ variant }) => showCta(variant),
-      };
+      if (event.detail && event.detail.config) {
+        event.detail.config.clientTools = {
+          show_trial_cta: ({ variant }) => showCta(variant),
+        };
+      }
     });
 
     widget.addEventListener("elevenlabs-convai:call-ended", () => {
