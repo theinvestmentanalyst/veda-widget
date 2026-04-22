@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veda — InsightOne Voice Demo</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    #start-veda {
+      padding: 14px 32px;
+      background: #0a3d62;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(10,61,98,0.25);
+      transition: all 0.15s ease;
+    }
+    #start-veda:hover { transform: translateY(-2px); }
+    #start-veda:disabled { opacity: 0.6; cursor: not-allowed; }
+    #veda-status {
+      margin-top: 16px;
+      font-size: 14px;
+      color: #555;
+      min-height: 20px;
+    }
+    #veda-cta-container {
+      margin-top: 20px;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .veda-cta-hidden {
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+    }
+    .veda-cta-visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .veda-cta-btn {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 14px 28px;
+      background: linear-gradient(135deg, #0a3d62 0%, #1e6091 100%);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(10,61,98,0.3);
+    }
+    .veda-cta-label { font-size: 17px; font-weight: 600; }
+    .veda-cta-sub { font-size: 13px; opacity: 0.9; margin-top: 2px; }
+  </style>
+</head>
+<body>
+  <button id="start-veda">🎙️ Talk to Veda</button>
+  <div id="veda-status"></div>
+
+  <div id="veda-cta-container" class="veda-cta-hidden">
+    <a href="https://theinvestmentanalyst.com/trial?utm_source=voice_demo&utm_medium=veda"
+       id="veda-trial-btn" class="veda-cta-btn" target="_blank" rel="noopener">
+      <span class="veda-cta-label">Start Your 30-Day Free Trial</span>
+      <span class="veda-cta-sub">No credit card · Nothing to lose</span>
+    </a>
+  </div>
+
+  <script type="module">
+    import { Conversation } from "https://cdn.jsdelivr.net/npm/@elevenlabs/client@latest/+esm";
+
+    const AGENT_ID = "agent_3701kprrr0kter8ry42f7amz7apr";
+
+    function getParam(name) {
+      return new URLSearchParams(window.location.search).get(name) || "";
+    }
+
+    function getVisitorId() {
+      let id = localStorage.getItem("veda_visitor_id");
+      if (!id) {
+        id = "v_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+        localStorage.setItem("veda_visitor_id", id);
+      }
+      return id;
+    }
+
+    function isReturning() {
+      return localStorage.getItem("veda_has_spoken") === "true" ? "true" : "false";
+    }
+
+    function markReturning() {
+      localStorage.setItem("veda_has_spoken", "true");
+    }
+
+    function buildContext() {
+      return {
+        page_url: getParam("page_url") || "unknown",
+        page_title: getParam("page") || "unknown",
+        referrer: getParam("referrer") || document.referrer || "direct",
+        utm_source: getParam("utm_source") || "direct",
+        utm_campaign: getParam("utm_campaign") || "none",
+        visitor_id: getVisitorId(),
+        is_returning: isReturning(),
+      };
+    }
+
+    const startBtn = document.getElementById("start-veda");
+    const statusEl = document.getElementById("veda-status");
+    const ctaContainer = document.getElementById("veda-cta-container");
+    const ctaBtn = document.getElementById("veda-trial-btn");
+    let conversation = null;
+
+    startBtn.addEventListener("click", async () => {
+      if (conversation) return;
+      startBtn.disabled = true;
+      statusEl.textContent = "Connecting…";
+
+      try {
+        const context = buildContext();
+        console.log("Veda context:", context);
+
+        conversation = await Conversation.startSession({
+          agentId: AGENT_ID,
+          dynamicVariables: context,
+          clientTools: {
+            show_trial_cta: ({ variant }) => {
+              if (variant === "ai_build") {
+                ctaBtn.href = "https://theinvestmentanalyst.com/contact";
+                ctaBtn.querySelector(".veda-cta-label").textContent = "Talk to the team";
+                ctaBtn.querySelector(".veda-cta-sub").textContent = "Get a voice agent built for you";
+              }
+              ctaContainer.classList.remove("veda-cta-hidden");
+              ctaContainer.classList.add("veda-cta-visible");
+              return "Button shown";
+            },
+          },
+          onConnect: () => { statusEl.textContent = "Connected — speak now"; },
+          onDisconnect: () => {
+            statusEl.textContent = "Call ended";
+            startBtn.disabled = false;
+            conversation = null;
+            markReturning();
+          },
+          onError: (err) => {
+            statusEl.textContent = "Error — please refresh";
+            console.error(err);
+            startBtn.disabled = false;
+          },
+        });
+      } catch (e) {
+        statusEl.textContent = "Could not start — check mic permission";
+        console.error(e);
+        startBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
